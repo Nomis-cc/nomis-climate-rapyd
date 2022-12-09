@@ -45,5 +45,20 @@ namespace Nomis.Rapyd.Interfaces.Models
         /// <example>1671655867</example>
         [JsonPropertyName("expiration")]
         public int Expiration { get; set; }
+
+        /// <summary>
+        /// Indicates the status of the payment. Response only.
+        /// <para>Responses - One of the following:</para>
+        /// <para>ACT - Active and awaiting completion of 3DS or capture. Can be updated.</para>
+        /// <para>CAN - Canceled by the client or the customer's bank.</para>
+        /// <para>CLO - Closed and paid.</para>
+        /// <para>ERR - Error. An attempt was made to create or complete a payment, but it failed.</para>
+        /// <para>EXP - The payment has expired.</para>
+        /// <para>NEW - Not closed.</para>
+        /// <para>REV - Reversed by Rapyd. See cancel_reason, above.</para>
+        /// </summary>
+        /// <example>CLO</example>
+        [JsonPropertyName("status")]
+        public string? Status { get; set; }
     }
 }
