@@ -2,7 +2,7 @@
 
 ### Environment variables
 
-You should add `NEXT_PUBLIC_API_HOST=http://localhost:3000` or `NEXT_PUBLIC_API_HOST=https://nomis.cc` to environment variables.
+You should add `API_HOST=https://api.nomis.cc` to environment variables.
 
 For local debugging:
 

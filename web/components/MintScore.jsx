@@ -15,6 +15,7 @@ export default function MintScore(props) {
   const [addressValue, setAddressValue] = React.useState("");
   const [scoreTokenValue, setScoreTokenValue] = React.useState("");
   const [noData, setNoData] = React.useState(true);
+  const [API_HOST, setApiHost] = React.useState(null);
   const renderAfterCalled = React.useRef(false);
 
   const isEcoScore =
@@ -100,11 +101,11 @@ export default function MintScore(props) {
 
   const [loading, setLoading] = React.useState(true);
 
-  async function fetchMyScore(address, blockchain) {
+  async function fetchMyScore(address, blockchain, apiHost) {
     await fetch(
       blockchains.find((b) => b.slug === props.blockchainSlug).group === "eco"
-        ? `https://api.nomis.cc/api/v1/${blockchain}/wallet/${address}/eco-score?ecoToken=0`
-        : `https://api.nomis.cc/api/v1/${blockchain}/wallet/${address}/score`
+        ? `${apiHost}/api/v1/${blockchain}/wallet/${address}/eco-score?ecoToken=0`
+        : `${apiHost}/api/v1/${blockchain}/wallet/${address}/score`
     )
       .then((res) => res.json())
       .then(
@@ -166,27 +167,40 @@ export default function MintScore(props) {
     setLoading(false);
   }
 
-  async function onInit(blockchain) {
+  async function onInit(blockchain, action, apiHost) {
     if (renderAfterCalled.current) {
       return;
     }
     renderAfterCalled.current = true;
 
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    });
-    setAddressValue(accounts[0]);
-    getScoreToken(accounts[0]).catch(console.error);
-    fetchMyScore(accounts[0], blockchain).catch(console.error);
+    if (apiHost !== undefined) {
+      setApiHost(apiHost);
 
-    // await tryToSwitchChain();
-    window.ethereum.on("accountsChanged", function (accounts) {
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      setAddressValue(accounts[0]);
       getScoreToken(accounts[0]).catch(console.error);
-      fetchMyScore(accounts[0], blockchain).catch(console.error);
-    });
+      fetchMyScore(accounts[0], blockchain, apiHost).catch(console.error);
+
+      window.ethereum.on("accountsChanged", function (accounts) {
+        getScoreToken(accounts[0]).catch(console.error);
+        fetchMyScore(accounts[0], blockchain, apiHost).catch(console.error);
+      });
+  
+      if (action === "openMint") {
+        handleOpen();
+      }
+      else if (action === "showPaymentError") {
+        alert('Payment failed!'); // TODO - change to popup
+      }
+      else if (action === "showCheckoutCancel") {
+        alert('Checkout cancelled!'); // TODO - change to popup
+      }
+    }
   }
 
-  onInit(props.blockchain);
+  onInit(props.blockchain, props.action, props.apiHost);
 
   const wallet = { score: scoreValue / 10000, stats: { noData } };
 
@@ -204,18 +218,30 @@ export default function MintScore(props) {
   };
 
   const { data: allCustomers, error: allCustomersError } = useSWR(
-    "https://api.nomis.cc/api/v1/rapyd/customers",
+    `${API_HOST}/api/v1/rapyd/customers`,
     fetcher
   );
 
   const [checkout, setCheckout] = React.useState(null);
   const [paid, setPaid] = React.useState(false);
+  const [buttonLabel, setButtonLabel] = React.useState("Create checkout");
   // const location = useGeoLocation();
   // console.log(location.country);
   // const currency = countries.all.find((c) => c.alpha2 === location.country)
   //   .currencies[0];
 
-  const mintEcoNomisToken = async () => {
+  const mintEcoNomisToken = async (apiHost) => {
+    setLoading(true);
+    try {
+      var switchResult = await tryToSwitchChain();
+      if (!switchResult) {
+        return;
+      }
+    } catch (error) {
+      console.error("setScore Error: ", error);
+      return;
+    }
+
     const isCustomerExist = allCustomers.data.find(
       (customer) => customer.name === addressValue
     );
@@ -223,7 +249,7 @@ export default function MintScore(props) {
     if (isCustomerExist) {
       window.localStorage.setItem("customerId", isCustomerExist.id);
     } else {
-      await fetch("https://api.nomis.cc/api/v1/rapyd/customer", {
+      await fetch(`${apiHost}/api/v1/rapyd/customer`, {
         method: "post",
         headers: {
           Accept: "application/json",
@@ -245,7 +271,9 @@ export default function MintScore(props) {
     if (!window.localStorage.getItem("checkoutId")) {
       let customerId = window.localStorage.getItem("customerId");
 
-      await fetch("https://api.nomis.cc/api/v1/rapyd/checkout", {
+      let domain = window.location.origin === "http://localhost:3000" ? "https://test.nomis.cc" : window.location.origin;
+
+      await fetch(`${apiHost}/api/v1/rapyd/checkout`, {
         method: "post",
         headers: {
           Accept: "application/json",
@@ -257,27 +285,36 @@ export default function MintScore(props) {
           country: "us",
           currency: "usd",
           customer: customerId,
-          complete_payment_url: "http://example.com/complete",
-          error_payment_url: "http://example.com/error",
-          complete_checkout_url: `https://test.nomis.cc/score/polygon_eco/${addressValue}`,
-          cancel_checkout_url: "http://example.com/checkout-cancel",
+          complete_payment_url: `${domain}/score/polygon_eco/${addressValue}?action=openMint`,
+          error_payment_url: `${domain}/score/polygon_eco/${addressValue}?action=showPaymentError`,
+          complete_checkout_url: `${domain}/score/polygon_eco/${addressValue}?action=openMint`,
+          cancel_checkout_url: `${domain}/score/polygon_eco/${addressValue}?action=showCheckoutCancel`,
         }),
       })
-        .then((response) => {
-          return response.json();
-        })
-        .then((data) => {
-          window.localStorage.setItem("checkoutId", data.data.id);
-        });
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => {
+        window.localStorage.setItem("checkoutId", data.data.id);
+      });
     }
 
     let checkoutId = window.localStorage.getItem("checkoutId");
-    await fetch(`https://api.nomis.cc/api/v1/rapyd/checkout/${checkoutId}`)
+    await fetch(`${apiHost}/api/v1/rapyd/checkout/${checkoutId}`)
       .then((response) => response.json())
       .then((data) => {
+        setButtonLabel("Pay $4.99");
         setCheckout(data);
-        setPaid(data.data.status === "DON" ? true : false);
+        if (data.data.payment.status === "ACT") {
+          setButtonLabel("Complete payment $4.99");
+        }
+        else if (data.data.payment.status === "CLO") {
+          setPaid(true);
+          setButtonLabel("Mint or Update");
+        }
       });
+
+    setLoading(false);
   };
 
   return (
@@ -316,25 +353,23 @@ export default function MintScore(props) {
                   <div className="action loading">Loading...</div>
                 ) : !isEcoScore || paid ? (
                   <button
-                    type="submit"
-                    className="button"
-                    onClick={mintNomisToken}
-                  >
-                    Mint or Update
+                    type="submit" 
+                    className="button" 
+                    onClick={mintNomisToken}>
+                    {buttonLabel}
                   </button>
                 ) : window.localStorage.getItem("checkoutId") && checkout ? (
                   <Link href={checkout.data.redirect_url} target="_blank">
                     <button type="submit" className="button">
-                      Pay $4.99
+                      {buttonLabel}
                     </button>
                   </Link>
                 ) : (
-                  <button
-                    type="submit"
-                    className="button"
-                    onClick={mintEcoNomisToken}
-                  >
-                    Mint or Update
+                  <button 
+                    type="submit" 
+                    className="button" 
+                    onClick={mintEcoNomisToken(API_HOST)}>
+                    Create checkout
                   </button>
                 )}
               </div>

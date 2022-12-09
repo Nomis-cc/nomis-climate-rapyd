@@ -307,7 +307,7 @@ export const blockchains = [
     icon: "/blockchains/polygon.svg",
     placeholder: "0x... address",
     coin: "MATIC",
-    contractAddress: "0x2e4c7f1914B4d17b23C1c034ea384eD345562C7D",
+    contractAddress: "0xA3a32C9bce9Ce9c7823b2E9f43d53cb8e86bddE1",
     chainId: 137,
     networkData: {
       chainId: "0x89",

@@ -105,7 +105,7 @@ export default function Input({ fullAddress, blockchain }) {
               if (blockchain.groupLabel === label)
                 return (
                   <li
-                    key={blockchain.item}
+                    key={blockchain.item + blockchain.group}
                     className={
                       id === active
                         ? `blockchain ${label} active`

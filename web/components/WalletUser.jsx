@@ -15,8 +15,11 @@ export default function WalletUser({
   wallet,
   blockchainSlug,
   blockchain,
+  group,
   address,
   fullAddress,
+  action,
+  apiHost,
 }) {
   const [random, setRandom] = React.useState();
   React.useEffect(() => {
@@ -39,10 +42,10 @@ export default function WalletUser({
           </div>
           <div className="meta">
             <UserAddress address={address} fullAddress={fullAddress} />
-            <UserStats wallet={wallet} blockchain={blockchainSlug} />
+            <UserStats wallet={wallet} blockchain={blockchainSlug} group={group} />
           </div>
         </div>
-        <MintScore blockchainSlug={blockchainSlug} blockchain={blockchain} />
+        <MintScore blockchainSlug={blockchainSlug} blockchain={blockchain} action={action} apiHost={apiHost} />
       </section>
     </>
   );

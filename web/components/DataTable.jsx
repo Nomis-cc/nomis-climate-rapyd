@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function DataTable({ wallet }) {
+export default function DataTable({ wallet, group }) {
   const [isVisible, setIsVisible] = React.useState(false);
 
   const stats = [];
@@ -23,7 +23,9 @@ export default function DataTable({ wallet }) {
         if (key.toLowerCase() === key1.toLowerCase()) {
           stats[i].label = wallet.stats.statsDescriptions[key1].label;
           stats[i].description = wallet.stats.statsDescriptions[key1].description;
-          stats[i].units = wallet.stats.statsDescriptions[key1].units;
+          stats[i].units = group === "eco" && wallet.stats.statsDescriptions[key1].units === "Eco token" 
+            ? wallet.stats.ecoToken 
+            : wallet.stats.statsDescriptions[key1].units;
         }
       }
       i++;

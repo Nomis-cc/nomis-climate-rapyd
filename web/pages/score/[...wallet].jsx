@@ -21,18 +21,22 @@ export async function getServerSideProps(context) {
   const blockchainSlug = await context.query.wallet[0];
   const fullAddress = await context.query.wallet[1];
 
-  return { props: { blockchainSlug, fullAddress } };
+  const query = new URLSearchParams(context.query);
+  const action = query.get('action');
+  const apiHost = process.env.API_HOST !== undefined ? process.env.API_HOST : "https://api.nomis.cc";
+
+  return { props: { blockchainSlug, fullAddress, action, apiHost } };
 }
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-export default function Scored({ blockchainSlug, fullAddress }) {
+export default function Scored({ blockchainSlug, fullAddress, action, apiHost }) {
   const blockchain = blockchains.find((b) => b.slug === blockchainSlug).apiSlug;
 
   const { data: wallet, error } = useSWR(
     blockchains.find((b) => b.slug === blockchainSlug).group === "eco"
-      ? `https://api.nomis.cc/api/v1/${blockchain}/wallet/${fullAddress}/eco-score?ecoToken=0`
-      : `https://api.nomis.cc/api/v1/${blockchain}/wallet/${fullAddress}/score`,
+      ? `${apiHost}/api/v1/${blockchain}/wallet/${fullAddress}/eco-score?ecoToken=0`
+      : `${apiHost}/api/v1/${blockchain}/wallet/${fullAddress}/score`,
     fetcher
   );
 
@@ -100,22 +104,29 @@ export default function Scored({ blockchainSlug, fullAddress }) {
             <WalletData
               wallet={wallet.data}
               blockchain={blockchain}
+              group={blockchains.find((b) => b.slug === blockchainSlug).group}
               fullAddress={fullAddress}
             />
             <WalletUser
               wallet={wallet.data}
               blockchainSlug={blockchainSlug}
               blockchain={blockchain}
+              group={blockchains.find((b) => b.slug === blockchainSlug).group}
               address={address}
               fullAddress={fullAddress}
+              action={action}
+              apiHost={apiHost}
             />
             <div className={`mobile ${isScrolled ? "isScrolled" : ""}`}>
               <WalletUser
                 wallet={wallet.data}
                 blockchainSlug={blockchainSlug}
                 blockchain={blockchain}
+                group={blockchains.find((b) => b.slug === blockchainSlug).group}
                 address={address}
                 fullAddress={fullAddress}
+                action={action}
+                apiHost={apiHost}
               />
             </div>
           </div>

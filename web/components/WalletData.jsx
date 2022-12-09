@@ -4,12 +4,12 @@ import DataTable from "./DataTable";
 import Image from "next/image";
 import sad from "../public/emoji/sad.png";
 
-export default function WalletData({ wallet, blockchain, fullAddress }) {
+export default function WalletData({ wallet, blockchain, group, fullAddress }) {
   return (
     <section className="WalletData">
       <DataCards wallet={wallet} blockchain={blockchain} />
       {!wallet.stats.noData ? (
-        <DataTable wallet={wallet} />
+        <DataTable wallet={wallet} group={group} />
       ) : (
         <section className="noData">
           <div className="container">

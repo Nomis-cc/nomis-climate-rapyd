@@ -1,9 +1,8 @@
-import react from "react";
 import React from "react";
 
 import { blockchains } from "../utilities/blockchains";
 
-export default function UserStats({ wallet, blockchain }) {
+export default function UserStats({ wallet, blockchain, group }) {
   const [isMonth, setIsMonth] = React.useState();
   wallet.stats.walletAge > 24
     ? () => setIsMonth(false)
@@ -13,7 +12,12 @@ export default function UserStats({ wallet, blockchain }) {
   React.useEffect(() => {
     for (let i = 0; i < blockchains.length; i++) {
       if (blockchains[i].slug === blockchain) {
-        setCoin(blockchains[i].coin);
+        if (group === "eco") {
+          setCoin(wallet.stats.ecoToken);
+        }
+        else {
+          setCoin(blockchains[i].coin);
+        }
       }
     }
   }, []);
